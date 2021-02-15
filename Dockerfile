@@ -1,22 +1,26 @@
-ARG FAIRROOT=17.04
 ARG ER=dev
+ARG ACCDAQ=master
+ARG DEPENDENCIES=ghcr.io/flnr-jinr/fs_oct17p4:latest
 
-FROM fairroot:${FAIRROOT}
+FROM ${DEPENDENCIES}
 
 WORKDIR /opt
 
-RUN git clone https://github.com/ExpertRootGroup/er &&\
-	cd er &&\
-	git checkout ${ER}
+RUN git clone https://github.com/flnr-jinr/ACCULINNA_go4_user_library accdaq &&\
+	cd accdaq &&\
+	git checkout ${ACCDAQ} &&\
+	mkdir build && cd build &&\
+	/bin/bash -c 'source /opt/FairSoft/bin/thisroot.sh && source /opt/go4/go4login && cmake ../ -DCMAKE_INSTALL_PREFIX=/opt/accdaq/install' &&\
+	make install -j4 
 
-WORKDIR /opt/er
-RUN	export SIMPATH=/opt/fair_install/FairSoft/installation &&\
-	export FAIRROOTPATH=/opt/FairRoot/insttallation &&\
+RUN cd /opt && git clone https://github.com/flnr-jinr/er &&\
+	cd er &&\
+	git checkout ${ER} &&\
+	export SIMPATH=/opt/FairSoft/ &&\
+	export FAIRROOTPATH=/opt/FairRoot/ &&\
 	mkdir build &&\
 	cd build &&\
-	cmake ../ -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ &&\
+	cmake ../ -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DACCULINNA_GO4=/opt/accdaq/install &&\
 	make -j4
 
-USER jovyan
-WORKDIR /home/jovyan
-RUN mkdir input && mkdir output && mkdir macro
+
